@@ -1,0 +1,39 @@
+name: ipc_zero_copy_tests
+
+x-common: &common
+  network_mode: host
+  ipc: host
+  shm_size: "1gb"
+  volumes:
+    - ../data:/data
+  # Override at `docker compose run <svc> <cmd>` to vary parameters.
+  command: >
+    ros2 launch ipc_zero_copy_tests ipc_cases.launch.py
+
+# The RMW only matters for the out-of-process cases (11, 12, 18); every other
+# case stays inside rclcpp's intra-process manager.
+services:
+  cyclonedds:
+    <<: *common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        RMW_IMPL: cyclonedds
+
+  fastdds:
+    <<: *common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        RMW_IMPL: fastdds
+
+  zenoh:
+    <<: *common
+    entrypoint: ["/usr/local/bin/ipc_zenoh_entrypoint.sh"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        RMW_IMPL: zenoh
